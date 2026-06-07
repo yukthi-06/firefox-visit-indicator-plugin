@@ -1,0 +1,9 @@
+{
+  "name": "com.visitedpagetracker.host",
+  "description": "Visited Page Tracker Native Messaging Host",
+  "path": "/usr/local/lib/visited-page-tracker/host.js",
+  "type": "stdio",
+  "allowed_extensions": [
+    "visited-page-tracker@example.com"
+  ]
+}

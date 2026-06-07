@@ -1,0 +1,406 @@
+please create a firefox plugin with following requirements
+* For every page visited, it has to write that URL and timestamp to a data store(File based preferred)
+* In future when user visits any page, the plugin has to look in the datastore, and if found, shoudl show a banner at the top saying that this page was last visited on <TIMESTAMP>
+* For a repeat visit site, apart from top banner, it should change the background color of the page to something distinct, so that user get a visual cue that this is an already visited page.
+
+Give me a detailed single prompt so that I can feed that to an AI IDE
+
+==============================================================
+Output of CHATGPT
+-----------------
+
+Below is a single, detailed prompt you can paste into an AI IDE (Cursor, Windsurf, Cline, Roo, Claude Code, Copilot Workspace, etc.) to generate the complete Firefox extension.
+
+Build a production-quality Firefox WebExtension called "Visited Page Tracker" with the following requirements.
+
+# Goal
+
+The extension should maintain a local history datastore independent of Firefox's built-in history.
+
+Whenever a user visits a page:
+
+1. Record the URL and current timestamp in a persistent file-based datastore if possible.
+2. On subsequent visits to the same URL:
+
+   * Display a prominent banner at the top of the page saying:
+
+     "You last visited this page on <timestamp>"
+
+   * Change the page background color slightly so the user immediately recognizes it as a previously visited page.
+
+The extension should work automatically on all normal web pages.
+
+# Technical Requirements
+
+## Browser
+
+Target Firefox using the latest WebExtensions Manifest V3 APIs.
+
+## Storage
+
+Preferred:
+
+* File-based datastore.
+
+However, Firefox WebExtensions do not normally allow arbitrary filesystem writes.
+
+Therefore implement:
+
+Option A (default):
+
+* Use browser.storage.local as the persistence layer.
+
+Option B (advanced mode):
+
+* Create a Native Messaging Host that writes records to a JSON file on disk.
+* Keep the code structured so the storage layer can be swapped between:
+
+  * browser.storage.local
+  * native messaging file storage
+
+Use an abstraction:
+
+```typescript
+interface VisitStore {
+    getVisit(url: string): Promise<VisitRecord | null>;
+    saveVisit(record: VisitRecord): Promise<void>;
+}
+```
+
+## Data Model
+
+```typescript
+interface VisitRecord {
+    url: string;
+    firstVisited: number;
+    lastVisited: number;
+    visitCount: number;
+}
+```
+
+Store timestamps as "yyyy-MM-dd.hhmmss".
+
+## Visit Logic
+
+When a page loads:
+
+1. Normalize URL:
+
+   * remove fragment/hash
+   * preserve query string
+   * preserve protocol
+   * preserve path
+
+Example:
+
+[https://example.com/page?id=1#section](https://example.com/page?id=1#section)
+
+becomes
+
+[https://example.com/page?id=1](https://example.com/page?id=1)
+
+2. Check datastore.
+
+3. If URL exists:
+
+   * Capture previous lastVisited timestamp.
+   * Increment visitCount.
+   * Update lastVisited to current time.
+   * Display banner using previous timestamp.
+
+4. If URL does not exist:
+
+   * Create record:
+
+     * firstVisited = now
+     * lastVisited = now
+     * visitCount = 1
+
+## UI Requirements
+
+### Banner
+
+Inject a fixed banner at the very top of the page.
+
+Properties:
+
+```css
+position: fixed;
+top: 0;
+left: 0;
+right: 0;
+z-index: 2147483647;
+```
+
+Style:
+
+* dark blue background
+* white text
+* subtle shadow
+* 40px height
+* responsive
+
+Message:
+
+```text
+You last visited this page on Jan 12, 2026, 10:15 AM
+Visit count: 7
+```
+
+Add a dismiss button.
+
+Dismissing should only hide the banner for the current page load.
+
+### Background Visual Cue
+
+For previously visited pages:
+
+Apply a subtle page overlay rather than directly modifying site CSS.
+
+Create a full-page fixed overlay:
+
+```css
+pointer-events:none;
+position:fixed;
+inset:0;
+```
+
+Use a very subtle tint:
+
+```css
+rgba(255, 255, 0, 0.03)
+```
+
+The page should remain fully usable.
+
+Avoid breaking layouts.
+
+## Architecture
+
+Project structure:
+
+```text
+visited-page-tracker/
+│
+├── manifest.json
+├── background/
+│   └── background.ts
+│
+├── content/
+│   ├── content.ts
+│   ├── banner.ts
+│   ├── overlay.ts
+│   └── styles.css
+│
+├── storage/
+│   ├── visitStore.ts
+│   ├── localStore.ts
+│   └── nativeStore.ts
+│
+├── shared/
+│   ├── types.ts
+│   ├── urlUtils.ts
+│   └── dateUtils.ts
+│
+├── options/
+│   ├── options.html
+│   ├── options.ts
+│   └── options.css
+│
+└── tests/
+```
+
+Use TypeScript throughout.
+
+## Extension Flow
+
+### Background Script
+
+Responsible for:
+
+* datastore access
+* visit record updates
+* responding to content script requests
+
+Message types:
+
+```typescript
+GET_VISIT_INFO
+UPDATE_VISIT
+```
+
+### Content Script
+
+Responsible for:
+
+* requesting visit information
+* rendering banner
+* rendering visual overlay
+
+No storage logic in content script.
+
+## Options Page
+
+Provide settings:
+
+### Enable Banner
+
+Boolean toggle.
+
+Default: true.
+
+### Enable Background Highlight
+
+Boolean toggle.
+
+Default: true.
+
+### Highlight Color
+
+Color picker.
+
+Default:
+
+```text
+rgba(255,255,0,0.03)
+```
+
+### Export Data
+
+Export all visit records to JSON.
+
+### Import Data
+
+Import JSON file.
+
+### Clear All Data
+
+Delete all visit history after confirmation.
+
+## Performance Requirements
+
+* Handle at least 100,000 URLs.
+* Use efficient key lookups.
+* Avoid scanning entire datastore.
+* Minimize content-script runtime.
+* Do not block page rendering.
+
+## Edge Cases
+
+Handle:
+
+* SPA navigation (React/Vue/Angular)
+* history.pushState
+* history.replaceState
+* hash changes
+* page reloads
+* redirects
+* duplicated tabs
+* browser restart
+
+For SPAs:
+
+Detect URL changes and re-run visit checks.
+
+## Security Requirements
+
+* Never transmit data externally.
+* No analytics.
+* No telemetry.
+* No network calls.
+* Data remains entirely local.
+
+## Manifest Permissions
+
+Use only the minimum required:
+
+```json
+[
+  "storage",
+  "tabs"
+]
+```
+
+Host permissions:
+
+```json
+["<all_urls>"]
+```
+
+Explain in comments why each permission is needed.
+
+## Native Messaging Support
+
+Additionally generate:
+
+1. Native Messaging Host implementation in Node.js.
+2. Example JSON host manifest.
+3. Installation instructions for:
+
+   * Windows
+   * macOS
+   * Linux
+
+The host should:
+
+* Receive save/read requests.
+* Persist data in:
+
+```text
+visited-pages.json
+```
+
+Use atomic file writes.
+
+## Testing
+
+Generate:
+
+* unit tests
+* integration tests
+
+Test scenarios:
+
+1. First visit
+2. Repeat visit
+3. Visit count increment
+4. URL normalization
+5. SPA route changes
+6. Data export/import
+7. Native messaging persistence
+
+## Deliverables
+
+Generate complete code for:
+
+* manifest.json
+* all TypeScript files
+* HTML
+* CSS
+* Native Messaging Host
+* package.json
+* tsconfig.json
+* build scripts
+* test suite
+
+Include detailed comments explaining design decisions.
+
+The generated code should be ready to build with:
+
+```bash
+npm install
+npm run build
+```
+
+and load into Firefox as a temporary extension.
+
+Also include a README with:
+
+* architecture overview
+* setup instructions
+* build instructions
+* native messaging setup
+* troubleshooting guide
+* future enhancements
+
+This prompt is intentionally prescriptive so the AI IDE generates a complete, maintainable extension architecture instead of a quick prototype.

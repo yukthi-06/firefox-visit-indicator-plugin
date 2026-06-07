@@ -1,0 +1,277 @@
+<!--
+  options/options.html
+
+  Extension settings page.
+
+  This page is opened via:
+    - Right-clicking the extension icon → "Manage Extension" → "Options"
+    - browser.runtime.openOptionsPage() (called on first install)
+
+  Design:
+    - Clean, modern dark-themed UI matching the banner style
+    - Sections: Settings toggles, Data management, About
+    - All functionality is driven by options.ts; this file is pure HTML structure
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Visited Page Tracker — Options</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+
+  <div class="vpt-options-app">
+
+    <!-- Header -->
+    <header class="vpt-header">
+      <div class="vpt-header__logo">
+        <span class="vpt-header__icon">🕐</span>
+        <div>
+          <h1 class="vpt-header__title">Visited Page Tracker</h1>
+          <p class="vpt-header__subtitle">Your private browsing history, your way</p>
+        </div>
+      </div>
+      <div id="save-status" class="vpt-save-status" aria-live="polite" aria-label="Save status"></div>
+    </header>
+
+    <main class="vpt-main">
+
+      <!-- ================================================================
+           SECTION: Display Settings
+           ================================================================ -->
+      <section class="vpt-section" aria-labelledby="display-settings-heading">
+        <h2 id="display-settings-heading" class="vpt-section__title">
+          <span class="vpt-section__icon">🎨</span>
+          Display Settings
+        </h2>
+
+        <!-- Enable Banner Toggle -->
+        <div class="vpt-setting">
+          <div class="vpt-setting__info">
+            <label for="enable-banner" class="vpt-setting__label">Show Visit Banner</label>
+            <p class="vpt-setting__description">
+              Display a notification banner at the top of previously visited pages
+              showing when you last visited and how many times.
+            </p>
+          </div>
+          <div class="vpt-setting__control">
+            <label class="vpt-toggle" for="enable-banner" aria-label="Toggle visit banner">
+              <input type="checkbox" id="enable-banner" class="vpt-toggle__input">
+              <span class="vpt-toggle__slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Enable Background Highlight Toggle -->
+        <div class="vpt-setting">
+          <div class="vpt-setting__info">
+            <label for="enable-highlight" class="vpt-setting__label">Background Highlight</label>
+            <p class="vpt-setting__description">
+              Apply a subtle color tint to the background of previously visited pages
+              for instant visual recognition. The tint is nearly invisible.
+            </p>
+          </div>
+          <div class="vpt-setting__control">
+            <label class="vpt-toggle" for="enable-highlight" aria-label="Toggle background highlight">
+              <input type="checkbox" id="enable-highlight" class="vpt-toggle__input">
+              <span class="vpt-toggle__slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Highlight Color -->
+        <div class="vpt-setting" id="highlight-color-setting">
+          <div class="vpt-setting__info">
+            <label for="highlight-color-hex" class="vpt-setting__label">Highlight Color</label>
+            <p class="vpt-setting__description">
+              Choose the tint color for the background highlight. The opacity is
+              kept very low (3%) for a subtle effect.
+            </p>
+          </div>
+          <div class="vpt-setting__control vpt-color-control">
+            <input type="color" id="highlight-color-hex" class="vpt-color-picker"
+                   value="#ffff00"
+                   aria-label="Choose highlight base color">
+            <div class="vpt-opacity-control">
+              <label for="highlight-opacity" class="vpt-opacity-label">
+                Opacity: <span id="opacity-value">3</span>%
+              </label>
+              <input type="range" id="highlight-opacity" class="vpt-range"
+                     min="1" max="20" value="3" step="1"
+                     aria-label="Highlight opacity percentage">
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ================================================================
+           SECTION: Storage Backend
+           ================================================================ -->
+      <section class="vpt-section" aria-labelledby="storage-settings-heading">
+        <h2 id="storage-settings-heading" class="vpt-section__title">
+          <span class="vpt-section__icon">💾</span>
+          Storage Backend
+        </h2>
+
+        <div class="vpt-setting">
+          <div class="vpt-setting__info">
+            <label for="storage-backend" class="vpt-setting__label">Storage Method</label>
+            <p class="vpt-setting__description">
+              <strong>Browser Storage</strong> (recommended): Uses Firefox's built-in
+              storage. No setup required.<br>
+              <strong>Native File Storage</strong>: Writes to a JSON file on your disk.
+              Requires installing the native host application. See the README for setup instructions.
+            </p>
+          </div>
+          <div class="vpt-setting__control">
+            <select id="storage-backend" class="vpt-select" aria-label="Select storage backend">
+              <option value="local">Browser Storage (Option A)</option>
+              <option value="native">Native File Storage (Option B)</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="native-warning" class="vpt-alert vpt-alert--warning" hidden>
+          <span class="vpt-alert__icon">⚠️</span>
+          <div>
+            <strong>Native Host Required</strong><br>
+            Native file storage requires the VPT host application to be installed.
+            If it's not installed, the extension will automatically fall back to browser storage.
+            <a href="#" id="native-install-link" class="vpt-link">View installation instructions</a>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ================================================================
+           SECTION: Data Management
+           ================================================================ -->
+      <section class="vpt-section" aria-labelledby="data-management-heading">
+        <h2 id="data-management-heading" class="vpt-section__title">
+          <span class="vpt-section__icon">🗄️</span>
+          Data Management
+        </h2>
+
+        <!-- Stats -->
+        <div class="vpt-stats-bar">
+          <div class="vpt-stat">
+            <span class="vpt-stat__value" id="total-urls">—</span>
+            <span class="vpt-stat__label">URLs tracked</span>
+          </div>
+          <div class="vpt-stat">
+            <span class="vpt-stat__value" id="total-visits">—</span>
+            <span class="vpt-stat__label">Total visits</span>
+          </div>
+          <div class="vpt-stat">
+            <span class="vpt-stat__value" id="oldest-visit">—</span>
+            <span class="vpt-stat__label">Tracking since</span>
+          </div>
+        </div>
+
+        <!-- Export -->
+        <div class="vpt-setting">
+          <div class="vpt-setting__info">
+            <label class="vpt-setting__label">Export Data</label>
+            <p class="vpt-setting__description">
+              Download all visit records as a JSON file. You can use this for backup
+              or to import into another browser profile.
+            </p>
+          </div>
+          <div class="vpt-setting__control">
+            <button id="export-btn" class="vpt-btn vpt-btn--secondary" type="button"
+                    aria-label="Export visit history to JSON file">
+              <span>⬇️</span> Export JSON
+            </button>
+          </div>
+        </div>
+
+        <!-- Import -->
+        <div class="vpt-setting">
+          <div class="vpt-setting__info">
+            <label class="vpt-setting__label">Import Data</label>
+            <p class="vpt-setting__description">
+              Import visit records from a previously exported JSON file.
+              Imported records are merged with your existing data.
+            </p>
+          </div>
+          <div class="vpt-setting__control">
+            <button id="import-btn" class="vpt-btn vpt-btn--secondary" type="button"
+                    aria-label="Import visit history from JSON file">
+              <span>⬆️</span> Import JSON
+            </button>
+            <input type="file" id="import-file" accept=".json" hidden
+                   aria-label="Select JSON file to import">
+          </div>
+        </div>
+
+        <!-- Clear All -->
+        <div class="vpt-setting">
+          <div class="vpt-setting__info">
+            <label class="vpt-setting__label">Clear All Data</label>
+            <p class="vpt-setting__description vpt-setting__description--danger">
+              Permanently delete all visit history. This cannot be undone.
+              You will no longer see "last visited" notifications until you
+              revisit pages.
+            </p>
+          </div>
+          <div class="vpt-setting__control">
+            <button id="clear-btn" class="vpt-btn vpt-btn--danger" type="button"
+                    aria-label="Clear all visit history">
+              <span>🗑️</span> Clear All History
+            </button>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ================================================================
+           SECTION: About
+           ================================================================ -->
+      <section class="vpt-section" aria-labelledby="about-heading">
+        <h2 id="about-heading" class="vpt-section__title">
+          <span class="vpt-section__icon">ℹ️</span>
+          About
+        </h2>
+        <div class="vpt-about">
+          <p>
+            <strong>Visited Page Tracker</strong> maintains a private, local history
+            of pages you visit — completely independent of Firefox's built-in history.
+          </p>
+          <p>
+            All data is stored <strong>entirely on your device</strong>.
+            No data is ever transmitted externally. No analytics. No telemetry.
+          </p>
+          <p class="vpt-version">Version: <span id="ext-version">—</span></p>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Confirmation Dialog -->
+    <div id="confirm-dialog" class="vpt-dialog-backdrop" hidden aria-modal="true" role="dialog"
+         aria-labelledby="dialog-title">
+      <div class="vpt-dialog">
+        <h3 id="dialog-title" class="vpt-dialog__title">⚠️ Clear All History</h3>
+        <p class="vpt-dialog__message">
+          Are you sure you want to delete all visit history?
+          This action <strong>cannot be undone</strong>.
+        </p>
+        <div class="vpt-dialog__actions">
+          <button id="dialog-cancel" class="vpt-btn vpt-btn--secondary" type="button">
+            Cancel
+          </button>
+          <button id="dialog-confirm" class="vpt-btn vpt-btn--danger" type="button">
+            Yes, Delete Everything
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /.vpt-options-app -->
+
+  <script src="options.js"></script>
+</body>
+</html>

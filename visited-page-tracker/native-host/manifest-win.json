@@ -1,0 +1,9 @@
+{
+  "name": "com.visitedpagetracker.host",
+  "description": "Visited Page Tracker Native Messaging Host",
+  "path": "C:\\Users\\YOUR_USERNAME\\AppData\\Roaming\\VisitedPageTracker\\host.js",
+  "type": "stdio",
+  "allowed_extensions": [
+    "visited-page-tracker@example.com"
+  ]
+}

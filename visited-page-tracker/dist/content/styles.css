@@ -1,0 +1,198 @@
+/**
+ * content/styles.css
+ *
+ * Styles for the visit notification banner and page overlay.
+ *
+ * Scoping strategy:
+ *   All selectors use the "vpt-" prefix to minimize the chance of clashing
+ *   with the host page's styles. We rely on high specificity where needed
+ *   but avoid !important to remain respectful of host page styles.
+ *
+ *   Critical layout properties are set via inline styles in the TS modules
+ *   (position:fixed, z-index, inset) so the banner/overlay work even if
+ *   this CSS file fails to load.
+ *
+ * Font import:
+ *   We use a system font stack to avoid external network requests,
+ *   which aligns with our no-network-calls security requirement.
+ */
+
+/* =========================================================================
+   BANNER
+   ========================================================================= */
+
+#vpt-visited-banner,
+.vpt-banner {
+  /* Layout — critical properties are also set inline in banner.ts */
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 2147483647;
+  height: 40px;
+  box-sizing: border-box;
+
+  /* Visual design */
+  background: linear-gradient(90deg, #0f2557 0%, #1a3a7a 50%, #0f2557 100%);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4), 0 1px 0 rgba(255, 255, 255, 0.1) inset;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+
+  /* Layout of children */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  gap: 8px;
+
+  /* Typography — system font stack for privacy (no external requests) */
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+    Ubuntu, Cantarell, sans-serif;
+  font-size: 13px;
+  line-height: 1;
+
+  /* Smooth entry animation */
+  animation: vpt-slide-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+
+  /* Prevent site styles from leaking in */
+  all: unset;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 2147483647 !important;
+  height: 40px !important;
+  box-sizing: border-box !important;
+  background: linear-gradient(90deg, #0f2557 0%, #1a3a7a 50%, #0f2557 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 0 12px !important;
+  gap: 8px !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  font-size: 13px !important;
+  line-height: 1 !important;
+  animation: vpt-slide-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+}
+
+/* Banner slide-in animation */
+@keyframes vpt-slide-in {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Dismiss animation */
+.vpt-banner--dismissing {
+  animation: vpt-slide-out 0.3s cubic-bezier(0.7, 0, 0.84, 0) forwards !important;
+}
+
+@keyframes vpt-slide-out {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+}
+
+/* Banner message area */
+.vpt-banner__message {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  overflow: hidden !important;
+  white-space: nowrap !important;
+  text-overflow: ellipsis !important;
+  color: #ffffff !important;
+  font-size: 13px !important;
+  font-family: inherit !important;
+}
+
+.vpt-banner__icon {
+  font-size: 15px !important;
+  flex-shrink: 0 !important;
+}
+
+.vpt-banner__text {
+  color: rgba(255, 255, 255, 0.9) !important;
+  font-size: 13px !important;
+}
+
+.vpt-banner__text strong {
+  color: #ffffff !important;
+  font-weight: 600 !important;
+}
+
+/* Dismiss button */
+.vpt-banner__dismiss {
+  /* Reset all browser defaults */
+  all: unset !important;
+
+  /* Size and shape */
+  width: 24px !important;
+  height: 24px !important;
+  border-radius: 50% !important;
+  flex-shrink: 0 !important;
+
+  /* Visual */
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+  font-size: 12px !important;
+  font-family: inherit !important;
+
+  /* Layout */
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+
+  /* Transition */
+  transition: background 0.15s ease, color 0.15s ease !important;
+}
+
+.vpt-banner__dismiss:hover {
+  background: rgba(255, 255, 255, 0.25) !important;
+  color: #ffffff !important;
+}
+
+.vpt-banner__dismiss:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.6) !important;
+  outline-offset: 2px !important;
+}
+
+/* =========================================================================
+   OVERLAY
+   ========================================================================= */
+
+#vpt-page-overlay,
+.vpt-overlay {
+  /* All critical styles set inline in overlay.ts for reliability */
+  transition: opacity 0.3s ease !important;
+}
+
+/* =========================================================================
+   RESPONSIVE
+   ========================================================================= */
+
+@media (max-width: 480px) {
+  #vpt-visited-banner,
+  .vpt-banner {
+    font-size: 11px !important;
+    padding: 0 8px !important;
+  }
+
+  .vpt-banner__icon {
+    display: none !important;
+  }
+}
