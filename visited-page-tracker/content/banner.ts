@@ -19,6 +19,7 @@
 
 import { VisitRecord } from '../shared/types';
 import { formatDisplayDate } from '../shared/dateUtils';
+import { removeOverlay } from './overlay';
 
 /** ID for the banner element — ensures only one banner exists per page */
 const BANNER_ID = 'vpt-visited-banner';
@@ -64,6 +65,26 @@ export function showBanner(record: VisitRecord): void {
     </span>
   `.trim();
 
+  // Exclude button
+  const excludeBtn = document.createElement('button');
+  excludeBtn.className = 'vpt-banner__exclude';
+  excludeBtn.setAttribute('type', 'button');
+  excludeBtn.setAttribute('aria-label', 'Exclude this site from tracking');
+  excludeBtn.textContent = 'Exclude this site from tracking';
+  excludeBtn.addEventListener('click', async () => {
+    try {
+      const host = window.location.hostname;
+      await browser.runtime.sendMessage({
+        type: 'EXCLUDE_SITE',
+        host,
+      });
+      removeBanner();
+      removeOverlay();
+    } catch (err) {
+      console.error('[VPT Banner] Error excluding site:', err);
+    }
+  });
+
   // Dismiss button
   const dismissBtn = document.createElement('button');
   dismissBtn.className = 'vpt-banner__dismiss';
@@ -73,6 +94,7 @@ export function showBanner(record: VisitRecord): void {
   dismissBtn.addEventListener('click', dismissBanner);
 
   banner.appendChild(message);
+  banner.appendChild(excludeBtn);
   banner.appendChild(dismissBtn);
 
   // Insert at the very beginning of body to ensure top placement

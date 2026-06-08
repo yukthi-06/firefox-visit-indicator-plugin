@@ -163,10 +163,27 @@ browser.runtime.onMessage.addListener(
       // ------------------------------------------------------------------
       case 'GET_VISIT_INFO': {
         return (async (): Promise<VisitInfoResponse> => {
-          const [record, settings] = await Promise.all([
-            store.getVisit(msg.url),
-            loadSettings(),
-          ]);
+          const settings = await loadSettings();
+          let isExcluded = false;
+          try {
+            const host = new URL(msg.url).hostname;
+            isExcluded = settings.excludedSites?.includes(host) ?? false;
+          } catch (e) {
+            // ignore
+          }
+
+          if (isExcluded) {
+            return {
+              record: null,
+              settings: {
+                ...settings,
+                enableBanner: false,
+                enableHighlight: false,
+              },
+            };
+          }
+
+          const record = await store.getVisit(msg.url);
           return { record, settings };
         })();
       }
@@ -178,8 +195,39 @@ browser.runtime.onMessage.addListener(
       // ------------------------------------------------------------------
       case 'UPDATE_VISIT': {
         return (async (): Promise<UpdateVisitResponse> => {
+          const settings = await loadSettings();
+          let isExcluded = false;
+          try {
+            const host = new URL(msg.url).hostname;
+            isExcluded = settings.excludedSites?.includes(host) ?? false;
+          } catch (e) {
+            // ignore
+          }
+
+          if (isExcluded) {
+            return { success: false, record: null as any };
+          }
+
           const record = await processVisit(msg.url);
           return { success: true, record };
+        })();
+      }
+
+      // ------------------------------------------------------------------
+      // EXCLUDE_SITE
+      // Adds a host/domain to the exclusion list.
+      // ------------------------------------------------------------------
+      case 'EXCLUDE_SITE': {
+        return (async () => {
+          const settings = await loadSettings();
+          if (!settings.excludedSites) {
+            settings.excludedSites = [];
+          }
+          if (!settings.excludedSites.includes(msg.host)) {
+            settings.excludedSites.push(msg.host);
+            await saveSettings(settings);
+          }
+          return { success: true };
         })();
       }
 

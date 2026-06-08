@@ -82,6 +82,12 @@ async function checkVisit(rawUrl: string): Promise<void> {
 
     const { record: existingRecord, settings } = response;
 
+    // Check if the current hostname is excluded from tracking
+    const isExcluded = settings.excludedSites?.includes(window.location.hostname) ?? false;
+    if (isExcluded) {
+      return;
+    }
+
     // ------------------------------------------------------------------
     // Step 2: Render UI if this is a repeat visit
     //         We show the banner/overlay BEFORE updating the record

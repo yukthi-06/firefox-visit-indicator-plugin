@@ -28,6 +28,11 @@ const opacityValueEl = document.getElementById('opacity-value') as HTMLSpanEleme
 const highlightColorSettingEl = document.getElementById('highlight-color-setting') as HTMLDivElement;
 const nativeWarningEl = document.getElementById('native-warning') as HTMLDivElement;
 
+const newExcludedSiteEl = document.getElementById('new-excluded-site') as HTMLInputElement;
+const addExcludeBtn = document.getElementById('add-exclude-btn') as HTMLButtonElement;
+const excludeErrorEl = document.getElementById('exclude-error') as HTMLDivElement;
+const excludedSitesListEl = document.getElementById('excluded-sites-list') as HTMLUListElement;
+
 const exportBtn = document.getElementById('export-btn') as HTMLButtonElement;
 const importBtn = document.getElementById('import-btn') as HTMLButtonElement;
 const importFileEl = document.getElementById('import-file') as HTMLInputElement;
@@ -119,7 +124,85 @@ async function loadSettings(): Promise<void> {
 
   updateHighlightColorVisibility();
   updateNativeWarningVisibility();
+  renderExcludedSites();
   loadStats();
+}
+
+function renderExcludedSites(): void {
+  if (!excludedSitesListEl) return;
+  excludedSitesListEl.innerHTML = '';
+  const sites = currentSettings.excludedSites || [];
+
+  if (sites.length === 0) {
+    const emptyMsg = document.createElement('li');
+    emptyMsg.style.padding = '12px';
+    emptyMsg.style.color = 'var(--vpt-text-muted)';
+    emptyMsg.style.fontSize = '13px';
+    emptyMsg.style.textAlign = 'center';
+    emptyMsg.textContent = 'No sites excluded yet.';
+    excludedSitesListEl.appendChild(emptyMsg);
+    return;
+  }
+
+  sites.forEach((site) => {
+    const li = document.createElement('li');
+    li.className = 'vpt-excluded-item';
+
+    const span = document.createElement('span');
+    span.className = 'vpt-excluded-item__host';
+    span.textContent = site;
+
+    const removeBtn = document.createElement('button');
+    removeBtn.className = 'vpt-excluded-item__remove';
+    removeBtn.type = 'button';
+    removeBtn.textContent = 'Remove';
+    removeBtn.addEventListener('click', () => {
+      currentSettings.excludedSites = sites.filter((s) => s !== site);
+      saveSettings();
+      renderExcludedSites();
+    });
+
+    li.appendChild(span);
+    li.appendChild(removeBtn);
+    excludedSitesListEl.appendChild(li);
+  });
+}
+
+function handleAddExcludedSite(): void {
+  if (!excludeErrorEl || !newExcludedSiteEl) return;
+  excludeErrorEl.hidden = true;
+  excludeErrorEl.textContent = '';
+  
+  const site = newExcludedSiteEl.value.trim().toLowerCase();
+  if (!site) {
+    excludeErrorEl.textContent = 'Please enter a website domain.';
+    excludeErrorEl.hidden = false;
+    return;
+  }
+
+  // Basic validation for hostnames/domains/IPs
+  const domainRegex = /^[a-zA-Z0-9.-]+\.[a-zA-Z0-9.-]+$/;
+  const ipOrLocalRegex = /^[a-zA-Z0-9.:-]+$/;
+  if (!domainRegex.test(site) && !ipOrLocalRegex.test(site)) {
+    excludeErrorEl.textContent = 'Please enter a valid site domain (e.g. example.com).';
+    excludeErrorEl.hidden = false;
+    return;
+  }
+
+  if (!currentSettings.excludedSites) {
+    currentSettings.excludedSites = [];
+  }
+
+  if (currentSettings.excludedSites.includes(site)) {
+    excludeErrorEl.textContent = 'This site is already excluded.';
+    excludeErrorEl.hidden = false;
+    return;
+  }
+
+  currentSettings.excludedSites.push(site);
+  newExcludedSiteEl.value = '';
+  saveSettings();
+  renderExcludedSites();
 }
 
 async function saveSettings(): Promise<void> {
@@ -336,6 +419,13 @@ importFileEl.addEventListener('change', handleFileSelected);
 clearBtn.addEventListener('click', showConfirmDialog);
 dialogCancel.addEventListener('click', hideConfirmDialog);
 dialogConfirm.addEventListener('click', handleClearConfirmed);
+
+addExcludeBtn.addEventListener('click', handleAddExcludedSite);
+newExcludedSiteEl.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    handleAddExcludedSite();
+  }
+});
 
 // Close dialog on backdrop click
 confirmDialog.addEventListener('click', (e) => {
