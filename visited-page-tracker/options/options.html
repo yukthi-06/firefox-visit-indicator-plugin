@@ -167,9 +167,20 @@
           
           <div id="exclude-error" class="vpt-error-text" hidden></div>
 
-          <ul id="excluded-sites-list" class="vpt-excluded-list">
-            <!-- Populated dynamically by options.ts -->
-          </ul>
+          <div class="vpt-table-container" style="display: none;">
+            <table class="vpt-table">
+              <thead>
+                <tr>
+                  <th>Website / Domain</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="excluded-sites-list">
+                <!-- Populated dynamically by options.ts -->
+              </tbody>
+            </table>
+          </div>
         </div>
       </section>
 

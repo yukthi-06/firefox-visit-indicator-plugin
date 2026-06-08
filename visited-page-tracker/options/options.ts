@@ -133,27 +133,50 @@ function renderExcludedSites(): void {
   excludedSitesListEl.innerHTML = '';
   const sites = currentSettings.excludedSites || [];
 
+  const tableContainer = document.querySelector('.vpt-table-container') as HTMLDivElement;
+
   if (sites.length === 0) {
-    const emptyMsg = document.createElement('li');
-    emptyMsg.style.padding = '12px';
-    emptyMsg.style.color = 'var(--vpt-text-muted)';
-    emptyMsg.style.fontSize = '13px';
-    emptyMsg.style.textAlign = 'center';
-    emptyMsg.textContent = 'No sites excluded yet.';
-    excludedSitesListEl.appendChild(emptyMsg);
+    if (tableContainer) tableContainer.style.display = 'none';
+    
+    // Manage empty state element
+    let emptyState = document.getElementById('exclude-empty-state');
+    if (!emptyState) {
+      emptyState = document.createElement('div');
+      emptyState.id = 'exclude-empty-state';
+      emptyState.className = 'vpt-empty-state';
+      emptyState.innerHTML = '<span>🚫</span> No sites excluded from tracking yet.';
+      excludedSitesListEl.parentElement?.parentElement?.appendChild(emptyState);
+    }
+    emptyState.hidden = false;
     return;
   }
 
+  const emptyState = document.getElementById('exclude-empty-state');
+  if (emptyState) emptyState.hidden = true;
+  if (tableContainer) tableContainer.style.display = 'block';
+
   sites.forEach((site) => {
-    const li = document.createElement('li');
-    li.className = 'vpt-excluded-item';
+    const tr = document.createElement('tr');
+    tr.className = 'vpt-table-row';
 
-    const span = document.createElement('span');
-    span.className = 'vpt-excluded-item__host';
-    span.textContent = site;
+    // Domain Column
+    const tdDomain = document.createElement('td');
+    tdDomain.className = 'vpt-table-cell vpt-table-cell--domain';
+    tdDomain.textContent = site;
 
+    // Status Column
+    const tdStatus = document.createElement('td');
+    tdStatus.className = 'vpt-table-cell';
+    const statusBadge = document.createElement('span');
+    statusBadge.className = 'vpt-badge vpt-badge--danger';
+    statusBadge.textContent = 'Excluded';
+    tdStatus.appendChild(statusBadge);
+
+    // Action Column
+    const tdAction = document.createElement('td');
+    tdAction.className = 'vpt-table-cell';
     const removeBtn = document.createElement('button');
-    removeBtn.className = 'vpt-excluded-item__remove';
+    removeBtn.className = 'vpt-btn-action vpt-btn-action--danger';
     removeBtn.type = 'button';
     removeBtn.textContent = 'Remove';
     removeBtn.addEventListener('click', () => {
@@ -161,10 +184,12 @@ function renderExcludedSites(): void {
       saveSettings();
       renderExcludedSites();
     });
+    tdAction.appendChild(removeBtn);
 
-    li.appendChild(span);
-    li.appendChild(removeBtn);
-    excludedSitesListEl.appendChild(li);
+    tr.appendChild(tdDomain);
+    tr.appendChild(tdStatus);
+    tr.appendChild(tdAction);
+    excludedSitesListEl.appendChild(tr);
   });
 }
 
