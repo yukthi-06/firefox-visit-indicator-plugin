@@ -86,3 +86,61 @@ export function isTrackableUrlSafe(url: string): boolean {
   ];
   return !untrackedPrefixes.some((prefix) => url.startsWith(prefix));
 }
+
+/**
+ * Checks if a URL matches any of the patterns in the excluded list.
+ * Supports exact matches, wildcards (using *), and regex patterns (starting and ending with /).
+ */
+export function isUrlExcluded(url: string, excludedList: string[] | undefined): boolean {
+  if (!excludedList || excludedList.length === 0) return false;
+
+  let hostname = '';
+  try {
+    hostname = new URL(url).hostname;
+  } catch (e) {
+    // If it's not a valid URL, match string as-is
+  }
+
+  for (const pattern of excludedList) {
+    const trimmed = pattern.trim();
+    if (!trimmed) continue;
+
+    // 1. Regex pattern check (e.g. /regex/flags)
+    const regexMatch = trimmed.match(/^\/(.+)\/([a-z]*)$/i);
+    if (regexMatch) {
+      try {
+        const regex = new RegExp(regexMatch[1], regexMatch[2]);
+        if (regex.test(url) || (hostname && regex.test(hostname))) {
+          return true;
+        }
+      } catch (e) {
+        // Fallback if compilation fails
+      }
+    }
+
+    // 2. Wildcard check (contains *)
+    if (trimmed.includes('*')) {
+      try {
+        const escaped = trimmed.replace(/[-\/\\^$*+?.()|[\]{}]/g, (char) => {
+          if (char === '*') return '*';
+          return '\\' + char;
+        });
+        const regexStr = '^' + escaped.replace(/\*/g, '.*') + '$';
+        const regex = new RegExp(regexStr, 'i');
+        if (regex.test(url) || (hostname && regex.test(hostname))) {
+          return true;
+        }
+      } catch (e) {
+        // Fallback
+      }
+    }
+
+    // 3. Exact match check
+    const lowerTrimmed = trimmed.toLowerCase();
+    if (url.toLowerCase() === lowerTrimmed || (hostname && hostname.toLowerCase() === lowerTrimmed)) {
+      return true;
+    }
+  }
+
+  return false;
+}

@@ -1,10 +1,4 @@
-/**
- * tests/urlUtils.test.ts
- *
- * Unit tests for URL normalization utilities.
- */
-
-import { normalizeUrl, isTrackableUrlSafe } from '../shared/urlUtils';
+import { normalizeUrl, isTrackableUrlSafe, isUrlExcluded } from '../shared/urlUtils';
 
 describe('normalizeUrl', () => {
   test('removes fragment from URL', () => {
@@ -91,5 +85,37 @@ describe('isTrackableUrlSafe', () => {
 
   test('does not track javascript: URLs', () => {
     expect(isTrackableUrlSafe('javascript:void(0)')).toBe(false);
+  });
+});
+
+describe('isUrlExcluded', () => {
+  const list = ['https://example.com/docs', 'github.com', '*.wikipedia.org/*', '/^https:\\/\\/google\\.com\\/.*$/i'];
+
+  test('returns false if list is empty or undefined', () => {
+    expect(isUrlExcluded('https://example.com/docs', undefined)).toBe(false);
+    expect(isUrlExcluded('https://example.com/docs', [])).toBe(false);
+  });
+
+  test('matches exact URL', () => {
+    expect(isUrlExcluded('https://example.com/docs', list)).toBe(true);
+    expect(isUrlExcluded('https://example.com/docs/other', list)).toBe(false);
+  });
+
+  test('matches exact domain/hostname', () => {
+    expect(isUrlExcluded('https://github.com/index', list)).toBe(true);
+    expect(isUrlExcluded('https://github.com/', list)).toBe(true);
+    expect(isUrlExcluded('https://other.com/', list)).toBe(false);
+  });
+
+  test('matches wildcards', () => {
+    expect(isUrlExcluded('https://en.wikipedia.org/wiki/Main_Page', list)).toBe(true);
+    expect(isUrlExcluded('https://fr.wikipedia.org/some/path', list)).toBe(true);
+    expect(isUrlExcluded('https://wikipedia.org/', list)).toBe(false);
+  });
+
+  test('matches regex', () => {
+    expect(isUrlExcluded('https://google.com/search?q=test', list)).toBe(true);
+    expect(isUrlExcluded('https://google.com/', list)).toBe(true);
+    expect(isUrlExcluded('https://google.ca/', list)).toBe(false);
   });
 });

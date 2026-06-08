@@ -53,6 +53,7 @@ const extVersionEl = document.getElementById('ext-version') as HTMLSpanElement;
 // ---------------------------------------------------------------------------
 
 let currentSettings: UserSettings = defaultSettings();
+let editingIndex: number | null = null;
 
 // ---------------------------------------------------------------------------
 // Color picker utilities
@@ -155,14 +156,13 @@ function renderExcludedSites(): void {
   if (emptyState) emptyState.hidden = true;
   if (tableContainer) tableContainer.style.display = 'block';
 
-  sites.forEach((site) => {
+  sites.forEach((site, index) => {
     const tr = document.createElement('tr');
     tr.className = 'vpt-table-row';
 
-    // Domain Column
+    // Domain / Pattern Column
     const tdDomain = document.createElement('td');
     tdDomain.className = 'vpt-table-cell vpt-table-cell--domain';
-    tdDomain.textContent = site;
 
     // Status Column
     const tdStatus = document.createElement('td');
@@ -174,17 +174,121 @@ function renderExcludedSites(): void {
 
     // Action Column
     const tdAction = document.createElement('td');
-    tdAction.className = 'vpt-table-cell';
-    const removeBtn = document.createElement('button');
-    removeBtn.className = 'vpt-btn-action vpt-btn-action--danger';
-    removeBtn.type = 'button';
-    removeBtn.textContent = 'Remove';
-    removeBtn.addEventListener('click', () => {
-      currentSettings.excludedSites = sites.filter((s) => s !== site);
-      saveSettings();
-      renderExcludedSites();
-    });
-    tdAction.appendChild(removeBtn);
+    tdAction.className = 'vpt-table-cell vpt-action-cell';
+
+    if (editingIndex === index) {
+      // Inline input field
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'vpt-table-input';
+      input.value = site;
+      input.ariaLabel = 'Edit exclusion pattern';
+      tdDomain.appendChild(input);
+
+      // Save button
+      const saveBtn = document.createElement('button');
+      saveBtn.className = 'vpt-btn-action vpt-btn-action--success';
+      saveBtn.type = 'button';
+      saveBtn.textContent = 'Save';
+      saveBtn.addEventListener('click', () => {
+        if (!excludeErrorEl) return;
+        excludeErrorEl.hidden = true;
+        excludeErrorEl.textContent = '';
+
+        const newValue = input.value.trim();
+        if (!newValue) {
+          excludeErrorEl.textContent = 'Please enter a URL, domain, wildcard, or regex pattern.';
+          excludeErrorEl.hidden = false;
+          return;
+        }
+
+        const regexMatch = newValue.match(/^\/(.+)\/([a-z]*)$/i);
+        if (regexMatch) {
+          try {
+            new RegExp(regexMatch[1], regexMatch[2]);
+          } catch (e) {
+            excludeErrorEl.textContent = 'Invalid regular expression pattern.';
+            excludeErrorEl.hidden = false;
+            return;
+          }
+        }
+
+        const isDuplicate = sites.some((s, idx) => idx !== index && s === newValue);
+        if (isDuplicate) {
+          excludeErrorEl.textContent = 'This pattern is already excluded.';
+          excludeErrorEl.hidden = false;
+          return;
+        }
+
+        currentSettings.excludedSites[index] = newValue;
+        editingIndex = null;
+        saveSettings();
+        renderExcludedSites();
+      });
+
+      // Cancel button
+      const cancelBtn = document.createElement('button');
+      cancelBtn.className = 'vpt-btn-action vpt-btn-action--secondary';
+      cancelBtn.type = 'button';
+      cancelBtn.textContent = 'Cancel';
+      cancelBtn.addEventListener('click', () => {
+        if (excludeErrorEl) {
+          excludeErrorEl.hidden = true;
+          excludeErrorEl.textContent = '';
+        }
+        editingIndex = null;
+        renderExcludedSites();
+      });
+
+      // Keyboard support: Enter to save, Escape to cancel
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          saveBtn.click();
+        } else if (e.key === 'Escape') {
+          cancelBtn.click();
+        }
+      });
+
+      tdAction.appendChild(saveBtn);
+      tdAction.appendChild(cancelBtn);
+
+      // Auto focus the input field
+      setTimeout(() => input.focus(), 0);
+    } else {
+      tdDomain.textContent = site;
+
+      // Edit button
+      const editBtn = document.createElement('button');
+      editBtn.className = 'vpt-btn-action vpt-btn-action--secondary';
+      editBtn.type = 'button';
+      editBtn.textContent = 'Edit';
+      editBtn.addEventListener('click', () => {
+        if (excludeErrorEl) {
+          excludeErrorEl.hidden = true;
+          excludeErrorEl.textContent = '';
+        }
+        editingIndex = index;
+        renderExcludedSites();
+      });
+
+      // Remove button
+      const removeBtn = document.createElement('button');
+      removeBtn.className = 'vpt-btn-action vpt-btn-action--danger';
+      removeBtn.type = 'button';
+      removeBtn.textContent = 'Remove';
+      removeBtn.addEventListener('click', () => {
+        if (excludeErrorEl) {
+          excludeErrorEl.hidden = true;
+          excludeErrorEl.textContent = '';
+        }
+        currentSettings.excludedSites = sites.filter((s) => s !== site);
+        saveSettings();
+        renderExcludedSites();
+      });
+
+      tdAction.appendChild(editBtn);
+      tdAction.appendChild(removeBtn);
+    }
 
     tr.appendChild(tdDomain);
     tr.appendChild(tdStatus);
@@ -198,33 +302,36 @@ function handleAddExcludedSite(): void {
   excludeErrorEl.hidden = true;
   excludeErrorEl.textContent = '';
   
-  const site = newExcludedSiteEl.value.trim().toLowerCase();
-  if (!site) {
-    excludeErrorEl.textContent = 'Please enter a website domain.';
+  const pattern = newExcludedSiteEl.value.trim();
+  if (!pattern) {
+    excludeErrorEl.textContent = 'Please enter a URL, domain, wildcard, or regex pattern.';
     excludeErrorEl.hidden = false;
     return;
   }
 
-  // Basic validation for hostnames/domains/IPs
-  const domainRegex = /^[a-zA-Z0-9.-]+\.[a-zA-Z0-9.-]+$/;
-  const ipOrLocalRegex = /^[a-zA-Z0-9.:-]+$/;
-  if (!domainRegex.test(site) && !ipOrLocalRegex.test(site)) {
-    excludeErrorEl.textContent = 'Please enter a valid site domain (e.g. example.com).';
-    excludeErrorEl.hidden = false;
-    return;
+  // Basic regex pattern validation
+  const regexMatch = pattern.match(/^\/(.+)\/([a-z]*)$/i);
+  if (regexMatch) {
+    try {
+      new RegExp(regexMatch[1], regexMatch[2]);
+    } catch (e) {
+      excludeErrorEl.textContent = 'Invalid regular expression pattern.';
+      excludeErrorEl.hidden = false;
+      return;
+    }
   }
 
   if (!currentSettings.excludedSites) {
     currentSettings.excludedSites = [];
   }
 
-  if (currentSettings.excludedSites.includes(site)) {
-    excludeErrorEl.textContent = 'This site is already excluded.';
+  if (currentSettings.excludedSites.includes(pattern)) {
+    excludeErrorEl.textContent = 'This pattern is already excluded.';
     excludeErrorEl.hidden = false;
     return;
   }
 
-  currentSettings.excludedSites.push(site);
+  currentSettings.excludedSites.push(pattern);
   newExcludedSiteEl.value = '';
   saveSettings();
   renderExcludedSites();

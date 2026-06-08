@@ -100,6 +100,7 @@ export interface UpdateVisitMessage {
 export interface ExcludeSiteMessage {
   type: 'EXCLUDE_SITE';
   host: string;
+  url?: string;
 }
 
 // ---------------------------------------------------------------------------

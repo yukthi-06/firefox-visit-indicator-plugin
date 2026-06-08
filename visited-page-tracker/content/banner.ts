@@ -20,6 +20,7 @@
 import { VisitRecord } from '../shared/types';
 import { formatDisplayDate } from '../shared/dateUtils';
 import { removeOverlay } from './overlay';
+import { normalizeUrl } from '../shared/urlUtils';
 
 /** ID for the banner element — ensures only one banner exists per page */
 const BANNER_ID = 'vpt-visited-banner';
@@ -69,19 +70,21 @@ export function showBanner(record: VisitRecord): void {
   const excludeBtn = document.createElement('button');
   excludeBtn.className = 'vpt-banner__exclude';
   excludeBtn.setAttribute('type', 'button');
-  excludeBtn.setAttribute('aria-label', 'Exclude this site from tracking');
-  excludeBtn.textContent = 'Exclude this site from tracking';
+  excludeBtn.setAttribute('aria-label', 'Exclude this page from tracking');
+  excludeBtn.textContent = 'Exclude this page from tracking';
   excludeBtn.addEventListener('click', async () => {
     try {
+      const normalizedUrl = normalizeUrl(window.location.href);
       const host = window.location.hostname;
       await browser.runtime.sendMessage({
         type: 'EXCLUDE_SITE',
         host,
+        url: normalizedUrl,
       });
       removeBanner();
       removeOverlay();
     } catch (err) {
-      console.error('[VPT Banner] Error excluding site:', err);
+      console.error('[VPT Banner] Error excluding page:', err);
     }
   });
 

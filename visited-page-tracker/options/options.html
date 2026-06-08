@@ -147,22 +147,27 @@
       </section>
 
       <!-- ================================================================
-           SECTION: Excluded Sites
+           SECTION: Excluded Pages / Patterns
            ================================================================ -->
       <section class="vpt-section" aria-labelledby="excluded-sites-heading">
         <h2 id="excluded-sites-heading" class="vpt-section__title">
           <span class="vpt-section__icon">🚫</span>
-          Excluded Sites
+          Excluded Pages / Patterns
         </h2>
 
         <div class="vpt-exclude-container">
-          <p class="vpt-setting__description vpt-exclude-desc">
-            Specify hostnames/domains that should be excluded from tracking. The last visited banner and background highlight will never be shown on these sites.
-          </p>
+          <div class="vpt-setting__description vpt-exclude-desc">
+            Specify pages or pattern matchers that should be excluded from tracking. The banner and highlight will never be shown on matching URLs:
+            <ul class="vpt-exclude-instructions">
+              <li><strong>Exact match</strong> (default): e.g. <code>https://example.com/docs</code> (excludes only that URL) or <code>example.com</code> (excludes the home page or matching hostname exactly).</li>
+              <li><strong>Wildcards</strong>: Use <code>*</code> to match anything, e.g. <code>*.wikipedia.org/*</code> (excludes any wiki page).</li>
+              <li><strong>Regex patterns</strong>: Wrap in slashes, e.g. <code>/^https:\/\/github\.com\/.*$/i</code>.</li>
+            </ul>
+          </div>
 
           <div class="vpt-exclude-form">
-            <input type="text" id="new-excluded-site" class="vpt-input" placeholder="e.g., github.com" aria-label="New excluded site domain">
-            <button id="add-exclude-btn" class="vpt-btn vpt-btn--secondary" type="button">Add Site</button>
+            <input type="text" id="new-excluded-site" class="vpt-input" placeholder="e.g., https://example.com/page, *.github.com/*, or /^https:\/\/.../" aria-label="New excluded site domain or pattern">
+            <button id="add-exclude-btn" class="vpt-btn vpt-btn--secondary" type="button">Add Pattern</button>
           </div>
           
           <div id="exclude-error" class="vpt-error-text" hidden></div>
@@ -171,7 +176,7 @@
             <table class="vpt-table">
               <thead>
                 <tr>
-                  <th>Website / Domain</th>
+                  <th>Exclusion Pattern</th>
                   <th>Status</th>
                   <th>Action</th>
                 </tr>

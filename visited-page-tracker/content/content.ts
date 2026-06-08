@@ -26,7 +26,7 @@
  *   called with the same URL, or hash-only change without fragment tracking).
  */
 
-import { normalizeUrl, isTrackableUrlSafe } from '../shared/urlUtils';
+import { normalizeUrl, isTrackableUrlSafe, isUrlExcluded } from '../shared/urlUtils';
 import { VisitInfoResponse } from '../shared/types';
 import { showBanner, removeBanner } from './banner';
 import { showOverlay, removeOverlay } from './overlay';
@@ -82,8 +82,8 @@ async function checkVisit(rawUrl: string): Promise<void> {
 
     const { record: existingRecord, settings } = response;
 
-    // Check if the current hostname is excluded from tracking
-    const isExcluded = settings.excludedSites?.includes(window.location.hostname) ?? false;
+    // Check if the current URL is excluded from tracking
+    const isExcluded = isUrlExcluded(url, settings.excludedSites);
     if (isExcluded) {
       return;
     }

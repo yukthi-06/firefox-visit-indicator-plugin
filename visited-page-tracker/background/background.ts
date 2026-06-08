@@ -36,6 +36,7 @@ import {
   defaultSettings,
 } from '../shared/types';
 import { now } from '../shared/dateUtils';
+import { isUrlExcluded } from '../shared/urlUtils';
 
 // ---------------------------------------------------------------------------
 // Store factory — swap between Option A and Option B here
@@ -164,13 +165,7 @@ browser.runtime.onMessage.addListener(
       case 'GET_VISIT_INFO': {
         return (async (): Promise<VisitInfoResponse> => {
           const settings = await loadSettings();
-          let isExcluded = false;
-          try {
-            const host = new URL(msg.url).hostname;
-            isExcluded = settings.excludedSites?.includes(host) ?? false;
-          } catch (e) {
-            // ignore
-          }
+          const isExcluded = isUrlExcluded(msg.url, settings.excludedSites);
 
           if (isExcluded) {
             return {
@@ -196,13 +191,7 @@ browser.runtime.onMessage.addListener(
       case 'UPDATE_VISIT': {
         return (async (): Promise<UpdateVisitResponse> => {
           const settings = await loadSettings();
-          let isExcluded = false;
-          try {
-            const host = new URL(msg.url).hostname;
-            isExcluded = settings.excludedSites?.includes(host) ?? false;
-          } catch (e) {
-            // ignore
-          }
+          const isExcluded = isUrlExcluded(msg.url, settings.excludedSites);
 
           if (isExcluded) {
             return { success: false, record: null as any };
@@ -215,7 +204,7 @@ browser.runtime.onMessage.addListener(
 
       // ------------------------------------------------------------------
       // EXCLUDE_SITE
-      // Adds a host/domain to the exclusion list.
+      // Adds a host/domain or exact URL to the exclusion list.
       // ------------------------------------------------------------------
       case 'EXCLUDE_SITE': {
         return (async () => {
@@ -223,8 +212,9 @@ browser.runtime.onMessage.addListener(
           if (!settings.excludedSites) {
             settings.excludedSites = [];
           }
-          if (!settings.excludedSites.includes(msg.host)) {
-            settings.excludedSites.push(msg.host);
+          const excludePattern = msg.url || msg.host;
+          if (excludePattern && !settings.excludedSites.includes(excludePattern)) {
+            settings.excludedSites.push(excludePattern);
             await saveSettings(settings);
           }
           return { success: true };
