@@ -14,7 +14,7 @@
     "typecheck": "tsc --noEmit",
     "clean": "rimraf dist",
     "prebuild": "npm run clean",
-    "package": "npm run build && npx web-ext build --source-dir=dist --artifacts-dir=artifacts --overwrite-dest && node -e \"const fs = require('fs'); const path = require('path'); const dir = 'artifacts'; fs.readdirSync(dir).forEach(file => { if (file.endsWith('.zip')) { fs.renameSync(path.join(dir, file), path.join(dir, file.replace(/\\.zip$/, '.xpi'))); } }); console.log('XPI ready in artifacts/');\"",
+    "package": "npm run build && npx web-ext build --source-dir=dist --artifacts-dir=artifacts --overwrite-dest && node -e \"const fs = require('fs'); const path = require('path'); const dir = 'artifacts'; const d = new Date(); const ts = d.getFullYear() + String(d.getMonth()+1).padStart(2,'0') + String(d.getDate()).padStart(2,'0') + '.' + String(d.getHours()).padStart(2,'0') + String(d.getMinutes()).padStart(2,'0') + String(d.getSeconds()).padStart(2,'0'); fs.readdirSync(dir).forEach(file => { if (file.endsWith('.zip')) { fs.renameSync(path.join(dir, file), path.join(dir, file.replace(/\\.zip$/, '_' + ts + '.xpi'))); } }); console.log('XPI ready in artifacts/');\"",
     "package:sign": "npx web-ext sign --source-dir=dist --artifacts-dir=artifacts --channel=unlisted"
   },
   "devDependencies": {
