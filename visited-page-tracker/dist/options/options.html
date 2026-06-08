@@ -147,6 +147,33 @@
       </section>
 
       <!-- ================================================================
+           SECTION: Excluded Sites
+           ================================================================ -->
+      <section class="vpt-section" aria-labelledby="excluded-sites-heading">
+        <h2 id="excluded-sites-heading" class="vpt-section__title">
+          <span class="vpt-section__icon">🚫</span>
+          Excluded Sites
+        </h2>
+
+        <div class="vpt-exclude-container">
+          <p class="vpt-setting__description vpt-exclude-desc">
+            Specify hostnames/domains that should be excluded from tracking. The last visited banner and background highlight will never be shown on these sites.
+          </p>
+
+          <div class="vpt-exclude-form">
+            <input type="text" id="new-excluded-site" class="vpt-input" placeholder="e.g., github.com" aria-label="New excluded site domain">
+            <button id="add-exclude-btn" class="vpt-btn vpt-btn--secondary" type="button">Add Site</button>
+          </div>
+          
+          <div id="exclude-error" class="vpt-error-text" hidden></div>
+
+          <ul id="excluded-sites-list" class="vpt-excluded-list">
+            <!-- Populated dynamically by options.ts -->
+          </ul>
+        </div>
+      </section>
+
+      <!-- ================================================================
            SECTION: Data Management
            ================================================================ -->
       <section class="vpt-section" aria-labelledby="data-management-heading">

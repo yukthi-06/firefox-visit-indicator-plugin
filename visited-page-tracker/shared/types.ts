@@ -57,6 +57,9 @@ export interface UserSettings {
    * "native" = Native Messaging Host (Option B, advanced)
    */
   storageBackend: 'local' | 'native';
+
+  /** Hostnames/sites excluded from tracking */
+  excludedSites: string[];
 }
 
 /** Factory that returns default settings — used on first install */
@@ -66,6 +69,7 @@ export function defaultSettings(): UserSettings {
     enableHighlight: true,
     highlightColor: 'rgba(255,255,0,0.03)',
     storageBackend: 'local',
+    excludedSites: [],
   };
 }
 
@@ -90,6 +94,12 @@ export interface GetVisitInfoMessage {
 export interface UpdateVisitMessage {
   type: 'UPDATE_VISIT';
   url: string;
+}
+
+/** Message sent to exclude a specific host/site from tracking */
+export interface ExcludeSiteMessage {
+  type: 'EXCLUDE_SITE';
+  host: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -130,6 +140,7 @@ export interface ClearDataMessage {
 export type ExtensionMessage =
   | GetVisitInfoMessage
   | UpdateVisitMessage
+  | ExcludeSiteMessage
   | GetSettingsMessage
   | SaveSettingsMessage
   | ExportDataMessage

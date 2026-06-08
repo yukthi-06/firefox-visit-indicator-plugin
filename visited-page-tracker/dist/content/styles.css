@@ -134,6 +134,36 @@
   font-weight: 600 !important;
 }
 
+/* Exclude button */
+.vpt-banner__exclude {
+  all: unset !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  padding: 4px 10px !important;
+  border-radius: 4px !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  font-family: inherit !important;
+  cursor: pointer !important;
+  transition: background 0.15s ease, border-color 0.15s ease !important;
+  margin-left: auto !important; /* Push it to the right, next to the close button */
+}
+
+.vpt-banner__exclude:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+  border-color: rgba(255, 255, 255, 0.4) !important;
+}
+
+.vpt-banner__exclude:active {
+  background: rgba(255, 255, 255, 0.15) !important;
+}
+
+.vpt-banner__exclude:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.6) !important;
+  outline-offset: 2px !important;
+}
+
 /* Dismiss button */
 .vpt-banner__dismiss {
   /* Reset all browser defaults */
