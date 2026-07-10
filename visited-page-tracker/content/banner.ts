@@ -109,7 +109,7 @@ export function showBanner(record: VisitRecord): void {
 
 /**
  * Hides the banner and remembers the dismissal for this page session.
- * Also removes the body padding added when the banner was shown.
+ * Also removes the body padding and background color overlay added when the banner was shown.
  */
 function dismissBanner(): void {
   const banner = document.getElementById(BANNER_ID);
@@ -120,6 +120,7 @@ function dismissBanner(): void {
     banner.addEventListener('transitionend', () => {
       banner.remove();
       applyBodyPadding(false);
+      removeOverlay();
     }, { once: true });
 
     // Fallback: force remove after 400ms if transitionend never fires
@@ -127,8 +128,11 @@ function dismissBanner(): void {
       if (document.getElementById(BANNER_ID)) {
         banner.remove();
         applyBodyPadding(false);
+        removeOverlay();
       }
     }, 400);
+  } else {
+    removeOverlay();
   }
 
   sessionStorage.setItem(DISMISSED_KEY, 'true');

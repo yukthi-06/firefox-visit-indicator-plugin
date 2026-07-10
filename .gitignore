@@ -9,5 +9,6 @@
 .cxx
 local.properties
 *.apk 
+*.xpi
 node_modules\
 visited-page-tracker/node_modules/
